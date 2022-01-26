@@ -1,14 +1,12 @@
-import pygame
-
+from pygame import Surface, SRCALPHA
 from states.state import State
 
 class Transition(State):
     def __init__(self, manager):
         super().__init__(manager)
-        self.setup()
 
     def setup(self):
-        self.image = pygame.Surface((self.manager.SCREEN_W, self.manager.SCREEN_H))
+        self.image = Surface((self.manager.SCREEN_W, self.manager.SCREEN_H), flags=SRCALPHA)
         self.image.fill((10, 20, 30))
         self.image.set_alpha(0)
         self.alpha = 0

@@ -1,12 +1,10 @@
 from states.state import State
-from point import Point
-
-from core_functions import spawn_particles
+from data.point import Point
+from data.particle import Particle
 
 class Menu(State):
     def __init__(self, manager):
         super().__init__(manager)
-        self.setup()
 
     def setup(self):
         self.points = [
@@ -27,8 +25,9 @@ class Menu(State):
         if events.get("mousebuttondown"):
             for i, point in enumerate(self.points):
                 if point.is_over(events.get("mousebuttondown").pos):
+                    self.manager.sounds["click"].play()
                     if point.state == "static":
-                        self.particles += spawn_particles(point.x, point.y)
+                        self.particles.extend(Particle.spawn(point.x, point.y))
                     match i:
                         case 0 | 1:
                             point.switch_state("dynamic")
@@ -45,20 +44,16 @@ class Menu(State):
                             point.switch_state("static")
                             self.points[3].switch_state("clickable")
 
+        Particle.update_particles(self.particles)
+
         for i, point in enumerate(self.points):
+            point.update()
             if point.state == "dynamic":
                 if point.y > self.manager.SCREEN_H:
-                    self.manager.transition_to("game" if i == 0 else "intro")
-            point.update()
-
-        for i, particle in sorted(enumerate(self.particles), reverse=True):
-            particle.update()
-            if particle.radius <= 0:
-                self.particles.pop(i)
+                    self.manager.transition_to("game" if i == 0 else "levels")
 
     def render(self, surface):
-        for particle in self.particles:
-            particle.render(surface)
+        Particle.render_particles(self.particles, surface)
         for point in self.points:
             point.render(surface)
         for label in self.lables:
