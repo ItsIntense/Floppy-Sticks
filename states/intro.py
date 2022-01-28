@@ -1,18 +1,18 @@
 from states.state import State
-from point import Point
+from data.point import Point
 
 class Intro(State):
     def __init__(self, manager):
         super().__init__(manager)
-        self.setup()
 
     def setup(self):
         self.point = Point(self.manager.SCREEN_C[0], self.manager.SCREEN_C[1], "clickable")
 
-    def update(self, events):
+    def update(self, events, **kwargs):
         if events.get("mousebuttondown"):
-            if self.point.is_over(events["mousebuttondown"].pos):
+            if self.point.collide(events["mousebuttondown"].pos):
                 self.point.switch_state("dynamic")
+                self.manager.sounds["click"].play()
 
         self.point.update()
         if self.point.state == "dynamic":

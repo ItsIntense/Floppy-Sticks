@@ -1,12 +1,10 @@
 from states.state import State
-from point import Point
-
-from core_functions import spawn_particles
+from data.point import Point
+from data.particle import Particle
 
 class Menu(State):
     def __init__(self, manager):
         super().__init__(manager)
-        self.setup()
 
     def setup(self):
         self.points = [
@@ -17,18 +15,18 @@ class Menu(State):
             Point(self.manager.SCREEN_C[0] - 40, self.manager.SCREEN_C[1] + 80, "static"),
             Point(self.manager.SCREEN_C[0] - 40, self.manager.SCREEN_C[1] + 120, "static")]
         self.lables = [
-            ("play", self.manager.SCREEN_C[0] + 30, self.manager.SCREEN_C[1], False),
-            ("select level", self.manager.SCREEN_C[0] + 30, self.manager.SCREEN_C[1] + 40, False),
-            ("music", self.manager.SCREEN_C[0] + 30, self.manager.SCREEN_C[1] + 80, False),
-            ("sound", self.manager.SCREEN_C[0] + 30, self.manager.SCREEN_C[1] + 120, False)]
+            ("- Play", self.manager.SCREEN_C[0] + 30, self.manager.SCREEN_C[1], False),
+            ("- Level", self.manager.SCREEN_C[0] + 30, self.manager.SCREEN_C[1] + 40, False),
+            ("- Music", self.manager.SCREEN_C[0] + 30, self.manager.SCREEN_C[1] + 80, False),
+            ("- Sound", self.manager.SCREEN_C[0] + 30, self.manager.SCREEN_C[1] + 120, False)]
         self.particles = []
 
-    def update(self, events):
+    def update(self, events, **kwargs):
         if events.get("mousebuttondown"):
             for i, point in enumerate(self.points):
-                if point.is_over(events.get("mousebuttondown").pos):
+                if point.collide(events["mousebuttondown"].pos):
                     if point.state == "static":
-                        self.particles += spawn_particles(point.x, point.y)
+                        self.particles.extend(Particle.spawn(point.x, point.y))
                     match i:
                         case 0 | 1:
                             point.switch_state("dynamic")
@@ -44,22 +42,21 @@ class Menu(State):
                         case 5:
                             point.switch_state("static")
                             self.points[3].switch_state("clickable")
+                    self.manager.sounds["click"].play()
+
+        # self.particles.extend(Particle.spawn(kwargs["mouse_pos"][0], kwargs["mouse_pos"][1]))
+
+        Particle.update_particles(self.particles)
 
         for i, point in enumerate(self.points):
-            if point.state == "dynamic":
-                if point.y > self.manager.SCREEN_H:
-                    self.manager.transition_to("game" if i == 0 else "intro")
             point.update()
-
-        for i, particle in sorted(enumerate(self.particles), reverse=True):
-            particle.update()
-            if particle.radius <= 0:
-                self.particles.pop(i)
+            if point.state == "dynamic":
+                self.manager.transition_to("game" if i == 0 else "levels")
 
     def render(self, surface):
-        for particle in self.particles:
-            particle.render(surface)
+        Particle.render_particles(self.particles, surface)
         for point in self.points:
             point.render(surface)
         for label in self.lables:
             self.manager.render_text(surface, label[0], label[1], label[2], render_centerx=label[3])
+        self.manager.render_text(surface, "Floppy Sticks", self.manager.SCREEN_C[0], 100, "title")
